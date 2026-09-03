@@ -19,7 +19,12 @@ export default function AddTaskScreen() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load saved tasks when the screen starts
+  // STEP 2: State for the quote
+  const [quote, setQuote] = useState(
+    "Loading today's motivation..."
+  );
+
+  // STEP 3: Load saved tasks when the screen starts
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -38,7 +43,7 @@ export default function AddTaskScreen() {
     loadTasks();
   }, []);
 
-  // Save tasks whenever the tasks array changes
+  // Save tasks whenever they change
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -56,9 +61,21 @@ export default function AddTaskScreen() {
     saveTasks();
   }, [tasks, isLoaded]);
 
+  // STEP 3: Fetch a quote when the screen loads
+  useEffect(() => {
+    fetch('https://api.quotable.io/random')
+      .then((response) => response.json())
+      .then((data) => setQuote(data.content))
+      .catch(() =>
+        setQuote('Believe in yourself and get it done!')
+      );
+  }, []);
+
   function handleAddTask() {
     if (taskText.trim() === '') {
-      setErrorMessage('Please type a task before adding it.');
+      setErrorMessage(
+        'Please type a task before adding it.'
+      );
 
       return;
     }
@@ -77,13 +94,31 @@ export default function AddTaskScreen() {
   function handleToggleTask(id) {
     setTasks(
       tasks.map((t) =>
-        t.id === id ? { ...t, done: !t.done } : t
+        t.id === id
+          ? { ...t, done: !t.done }
+          : t
       )
     );
   }
 
   return (
     <View style={styles.container}>
+
+      {/* STEP 4: Display the quote */}
+      <Text style={styles.quote}>
+        💬 {quote}
+      </Text>
+
+      {/* STEP 5: Refresh quote button */}
+      <Button
+        title="New Quote"
+        onPress={() => {
+          fetch('https://api.quotable.io/random')
+            .then((response) => response.json())
+            .then((data) => setQuote(data.content));
+        }}
+      />
+
       <Text style={styles.heading}>Add a Task</Text>
 
       <TextInput
@@ -93,6 +128,7 @@ export default function AddTaskScreen() {
         onChangeText={setTaskText}
       />
 
+      {/* STEP 4: Show error message */}
       {errorMessage !== '' && (
         <Text style={styles.error}>
           {errorMessage}
@@ -106,11 +142,13 @@ export default function AddTaskScreen() {
 
       <Text>You have {tasks.length} task(s)</Text>
 
-      {tasks.length > 0 && tasks.every((t) => t.done) && (
-        <Text style={styles.celebration}>
-          🎉 All done! Great work!
-        </Text>
-      )}
+      {/* STEP 5: Celebration when all tasks are done */}
+      {tasks.length > 0 &&
+        tasks.every((t) => t.done) && (
+          <Text style={styles.celebration}>
+            🎉 All done! Great work!
+          </Text>
+        )}
 
       <FlatList
         data={tasks}
@@ -119,7 +157,9 @@ export default function AddTaskScreen() {
           <TaskCard
             title={item.title}
             done={item.done}
-            onToggle={() => handleToggleTask(item.id)}
+            onToggle={() =>
+              handleToggleTask(item.id)
+            }
           />
         )}
         ListEmptyComponent={
@@ -142,6 +182,13 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
+  },
+
+  quote: {
+    fontStyle: 'italic',
+    color: '#6B7280',
+    marginBottom: 16,
+    textAlign: 'center',
   },
 
   heading: {
